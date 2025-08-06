@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import Search from "./components/Search.tsx";
 import Spinner from "./components/Spinner.tsx";
 import MovieCard from "./components/MovieCard.tsx";
+import {useDebounce} from "react-use";
 import type {Movie} from "./Types/Movie.ts";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -16,18 +17,29 @@ const API_OPTIONS = {
     }
 }
 
-const fetchEndPoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
 
 function App() {
+
     const [searchTerm, setSearchTerm] = useState('');
     const [movieList, setMovieList] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const fetchMovies = async () => {
+
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+    useDebounce((): void =>
+        setDebouncedSearchTerm(searchTerm),800,[searchTerm]
+    )
+
+    const fetchMovies = async (query: string = '') => {
         setIsLoading(true)
         setErrorMessage('');
         try {
-            const response = await fetch(fetchEndPoint, API_OPTIONS);
+            const endpoint = query
+                ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+                : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+
+            const response = await fetch(endpoint, API_OPTIONS);
 
             if(!response.ok) {
                 throw new Error('Failed to fetch movies');
@@ -51,7 +63,7 @@ function App() {
     }
 
     useEffect(() => {
-        fetchMovies().then((data) => {
+        fetchMovies(debouncedSearchTerm).then((data) => {
             if (data && Array.isArray(data.results)) {
                 setMovieList(data.results);
                 console.log(data.results);
@@ -59,7 +71,7 @@ function App() {
                 setMovieList([]); // fallback
             }
         });
-    }, []);
+    }, [debouncedSearchTerm]);
 
   return (
       <main>
@@ -71,7 +83,7 @@ function App() {
                   <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
               </header>
               <section className="all-movies">
-                  <h2>All Movies</h2>
+                  <h2>{searchTerm ? 'Here are the movies depending on your search' : 'All movies'}</h2>
                   {isLoading ? (
                       <Spinner/>
                   ) : errorMessage ? (
