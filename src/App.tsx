@@ -1,6 +1,8 @@
 import {useEffect, useState} from "react";
 import Search from "./components/Search.tsx";
 import Spinner from "./components/Spinner.tsx";
+import MovieCard from "./components/MovieCard.tsx";
+import type {Movie} from "./Types/Movie.ts";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -52,6 +54,7 @@ function App() {
         fetchMovies().then((data) => {
             if (data && Array.isArray(data.results)) {
                 setMovieList(data.results);
+                console.log(data.results);
             } else {
                 setMovieList([]); // fallback
             }
@@ -75,8 +78,8 @@ function App() {
                       <p className="text-red-500">{errorMessage}</p>
                   ) : movieList && (
                           <ul>
-                            {movieList.map((movie) => (
-                                <Spinner/>
+                            {movieList.map((movie:Movie) => (
+                                <MovieCard key={movie.id} movie={movie} />
                             ))}
                           </ul>
                   )}
